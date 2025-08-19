@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Simulateur Brut → Net Suisse</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background-color: #f4f6f9;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      color: #1a5fb4;
+      font-size: 1.6rem;
+    }
+    .container {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .input-group {
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .input-group label {
+      width: 30%;
+      font-size: 0.95rem;
+    }
+    .input-group input, .input-group select {
+      width: 65%;
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+    button {
+      width: 100%;
+      padding: 0.8rem;
+      margin-top: 1.5rem;
+      background-color: #1a5fb4;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background-color: #154a8a;
+    }
+    .result {
+      margin-top: 1.5rem;
+      padding: 1.2rem;
+      background-color: #eef3ff;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      text-align: center;
+      border: 1px solid #d0d8f0;
+    }
+    .note {
+      font-size: 0.85rem;
+      color: #666;
+      margin-top: 1.5rem;
+      text-align: center;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>💰 Simulateur Brut → Net (Suisse)</h1>
+
+    <div class="input-group">
+      <label for="canton">Canton</label>
+      <select id="canton">
+        <option value="VD">VD (Vaud)</option>
+        <option value="GE">GE (Genève)</option>
+      </select>
+    </div>
+
+    <div class="input-group">
+      <label for="tauxHoraire">Taux horaire (CHF)</label>
+      <input type="number" id="tauxHoraire" placeholder="ex: 46" step="0.01" />
+    </div>
+
+    <div class="input-group">
+      <label for="heuresMensuelles">Heures/mois</label>
+      <input type="number" id="heuresMensuelles" placeholder="ex: 182" />
+    </div>
+
+    <div class="input-group">
+      <label for="salaireAnnuel">Salaire annuel (CHF)</label>
+      <input type="number" id="salaireAnnuel" placeholder="ex: 100000" />
+    </div>
+
+    <div class="input-group">
+      <label for="include13e">13e salaire ?</label>
+      <select id="include13e">
+        <option value="oui">Oui</option>
+        <option value="non">Non</option>
+      </select>
+    </div>
+
+    <div class="input-group">
+      <label for="tauxActivite">Taux activité (%)</label>
+      <input type="number" id="tauxActivite" value="100" min="1" max="100" />
+    </div>
+
+    <h3>🔧 Paramètres</h3>
+    <div class="input-group">
+      <label for="avspct">AVS/AI/APG (%)</label>
+      <input type="number" id="avspct" value="6.45" step="0.01" />
+    </div>
+    <div class="input-group">
+      <label for="acpct">AC (%)</label>
+      <input type="number" id="acpct" value="1.10" step="0.01" />
+    </div>
+    <div class="input-group">
+      <label for="lpppct">LPP (%)</label>
+      <input type="number" id="lpppct" value="7.00" step="0.01" />
+    </div>
+    <div class="input-group">
+      <label for="laapct">LAA/NAP (%)</label>
+      <input type="number" id="laapct" value="1.50" step="0.01" />
+    </div>
+    <div class="input-group">
+      <label for="impot">Taux impôt (%)</label>
+      <input type="number" id="impot" value="5.0" step="0.1" />
+    </div>
+
+    <button onclick="calculer()">➡️ Calculer le Net Mensuel</button>
+
+    <div class="result" id="resultat">
+      Résultat : entrez les données et cliquez sur "Calculer"
+    </div>
+  </div>
+
+  <div class="note">
+    <p>
+      <strong>Mode d'emploi :</strong><br>
+      ➤ Soit remplissez <em>taux horaire + heures</em>,<br>
+      ➤ Soit remplissez <em>salaire annuel</em>.<br>
+      ➤ Le 13e salaire est réparti sur 12 mois.<br>
+      ➤ Adapté aux situations familiales avec conjoint inactif + 1 enfant.
+    </p>
+    <p>© 2025 – Simulateur simple, hors usage commercial</p>
+  </div>
+
+  <script>
+    function calculer() {
+      const tauxHoraire = parseFloat(document.getElementById("tauxHoraire").value) || 0;
+      const heuresMensuelles = parseFloat(document.getElementById("heuresMensuelles").value) || 0;
+      let salaireAnnuel = parseFloat(document.getElementById("salaireAnnuel").value) || null;
+      const include13e = document.getElementById("include13e").value === "oui";
+      const tauxActivite = parseFloat(document.getElementById("tauxActivite").value) / 100;
+
+      const avs = parseFloat(document.getElementById("avspct").value) || 0;
+      const ac = parseFloat(document.getElementById("acpct").value) || 0;
+      const lpp = parseFloat(document.getElementById("lpppct").value) || 0;
+      const laa = parseFloat(document.getElementById("laapct").value) || 0;
+      const impotPct = parseFloat(document.getElementById("impot").value) || 0;
+
+      const totalCotisationsPct = avs + ac + lpp + laa;
+      let brutMensuel = 0;
+
+      if (salaireAnnuel) {
+        salaireAnnuel *= tauxActivite;
+        brutMensuel = include13e ? salaireAnnuel / 12 : salaireAnnuel / 12;
+      } else if (tauxHoraire && heuresMensuelles) {
+        const brutAnnuel = include13e ? tauxHoraire * heuresMensuelles * 13 : tauxHoraire * heuresMensuelles * 12;
+        brutMensuel = brutAnnuel / 12;
+      } else {
+        document.getElementById("resultat").innerHTML = "❌ Veuillez remplir soit le salaire annuel, soit le taux horaire et les heures.";
+        return;
+      }
+
+      const cotisationsSociales = brutMensuel * (totalCotisationsPct / 100);
+      const baseImposable = brutMensuel - cotisationsSociales;
+      const impotSource = baseImposable * (impotPct / 100);
+      const netMensuel = brutMensuel - cotisationsSociales - impotSource;
+
+      document.getElementById("resultat").innerHTML = `
+        <strong>Résultats :</strong><br>
+        Brut mensuel : ${brutMensuel.toFixed(2)} CHF<br>
+        Cotisations (${totalCotisationsPct}%): ${cotisationsSociales.toFixed(2)} CHF<br>
+        Impôt (${impotPct}%): ${impotSource.toFixed(2)} CHF<br>
+        <span style="font-size:1.3rem; color:#1a5fb4;">
+          <strong>Net : ${netMensuel.toFixed(2)} CHF</strong>
+        </span>
+      `;
+    }
+  </script>
+</body>
+</html>
